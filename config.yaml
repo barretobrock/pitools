@@ -1,0 +1,10 @@
+# Configuration for the repo
+REPO:
+  NAME: pitools
+  URL: https://github.com/barretobrock/${REPO_NAME}
+  GIT_URL: git+${REPO_URL}.git#egg=${REPO_NAME}
+  DIR: ${HOME}/extras/${REPO_NAME}
+  VENV: ${HOME}/venvs/ptools/bin/python
+  DESC: A package for Raspberry Pi specific routines primarily focused around home automation
+  DEPS: [
+  ]
