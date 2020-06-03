@@ -5,7 +5,6 @@ from .gpio import GPIO
 import time
 import pandas as pd
 from importlib import import_module
-from .databases import MySQLLocal
 from .openhab import OpenHab
 
 

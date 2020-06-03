@@ -5,10 +5,10 @@ from picamera import PiCamera
 from typing import Optional, List, Tuple
 
 
-class PiCamera:
+class PiCam(PiCamera):
+    """Wrapper class for PiCamera"""
     def __init__(self):
-        picamera = __import__('picamera')
-        self.PiCamera = picamera.PiCamera
+        super().__init__()
 
     def capture_image(self, save_dir: str, res: Tuple[int, int] = (1280, 720), framerate: int = 24,
                       extra_text: str = '', timestamp: bool = True, vflip: bool = False, hflip: bool = False):
