@@ -12,7 +12,7 @@
 # DEFAULT VARIABLES
 # ------------------------------------------
 NAME="Repo Update Script"
-VERSION="0.0.3"
+VERSION="0.0.5"
 SKIP_DEPS=0
 
 # Import common variables / functions
@@ -33,10 +33,21 @@ announce_section "Pulling update from git repo"
 
 # PY PACKAGE UPDATE
 # ------------------------------------------
+announce_section "Updating custom dependencies"
+# Check if pyyaml exists in VENV.
+# If not, we'll need to install before actually installing the package(s)
+PKG_EXISTS=$(${REPO_VENV} -m pip list | grep -F PyYAML)
+if [[ -z ${PKG_EXISTS} ]]; then
+    echo "Package pyyaml doesn't exist in selected virtualenv. Installing before installing ${REPO_NAME}"
+    ${REPO_VENV} -m pip install PyYAML==5.3.1
+fi
+# Update dependencies first in case they have an outdated requirement
+# Kavalkilu
+${REPO_VENV} -m pip install -e ${REPO_DEP1} --upgrade ${NODEPS_FLAG}
+
 # Then update the python package locally
 announce_section "Beginning update of ${REPO_NAME}"
-#${REPO_VENV} setup.py install
-${REPO_VENV} -m pip install -e ${REPO_GIT_URL} --upgrade
+${REPO_VENV} -m pip install -e ${REPO_GIT_URL} --upgrade ${NODEPS_FLAG}
 
 # CRON UPDATE
 # --------------
@@ -48,7 +59,5 @@ SUDO_CRON_FILE=${CRON_DIR}/su-${HOSTNAME}.sh
 
 [[ -f ${CRON_FILE} ]] && echo "Applying cron file." && crontab ${CRON_FILE} || echo "No cron file."
 [[ -f ${SUDO_CRON_FILE} ]] && echo "Applying sudo cron file." && sudo crontab ${SUDO_CRON_FILE} || echo "No sudo cron file."
-
-announce_section "Cron updates completed"
 
 announce_section "Process completed"

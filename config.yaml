@@ -6,5 +6,4 @@ REPO:
   DIR: ${HOME}/extras/${REPO_NAME}
   VENV: ${HOME}/venvs/ptools/bin/python
   DESC: A package for Raspberry Pi specific routines primarily focused around home automation
-  DEPS: [
-  ]
+  DEP1: git+https://github.com/barretobrock/kavalkilu.git#egg=kavalkilu
