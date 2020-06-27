@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import RPi.GPIO as GPIO
+import RPi.GPIO as gpio
 
 
 class GPIO:
@@ -17,7 +17,7 @@ class GPIO:
     def __init__(self, pin: int, mode: str = 'bcm', status: str = 'input',
                  setwarn: bool = False, is_activelow: bool = False):
         self.pin = pin
-        GPIO.setwarnings(setwarn)
+        gpio.setwarnings(setwarn)
         self.mode = mode
         self.status = status.lower()
         self.is_activelow = is_activelow
@@ -31,23 +31,23 @@ class GPIO:
     def set_mode(self):
         if self.mode == 'board':
             # BOARD
-            GPIO.setmode(GPIO.BOARD)
+            gpio.setmode(gpio.BOARD)
         elif self.mode == 'bcm':
             # BCM
             # Use 'gpio readall' to get BCM pin layout for RasPi model
-            GPIO.setmode(GPIO.BCM)
+            gpio.setmode(gpio.BCM)
 
     def set_status(self):
         """Sets the pin status as on/HIGH(1) off/LOW(0)"""
         if self.status == 'output':
-            GPIO.setup(self.pin, GPIO.OUT)
+            gpio.setup(self.pin, gpio.OUT)
         elif self.status == 'input':
-            GPIO.setup(self.pin, GPIO.IN)
+            gpio.setup(self.pin, gpio.IN)
 
     def get_input(self):
         """Reads value of pin, only if the pin is set up for reading inputs"""
         if self.status == 'input':
-            return GPIO.input(self.pin)
+            return gpio.input(self.pin)
         else:
             # In case pin has been set up for output
             #   Can't read input when setup as output
@@ -58,7 +58,7 @@ class GPIO:
         if position not in [0, 1]:
             raise ValueError('Invalid position selected: (0, 1)')
         if self.status == 'output':
-            GPIO.output(self.pin, position)
+            gpio.output(self.pin, position)
         else:
             raise ValueError('Status for GPIO object is not "output"')
 
@@ -75,18 +75,22 @@ class GPIO:
             else:
                 print('Edge detected!')
         """
+        edge = None
         if action == 'rising':
-            edge = GPIO.RISING
+            edge = gpio.RISING
         elif action == 'falling':
-            edge = GPIO.FALLING
+            edge = gpio.FALLING
         elif action == 'both':
-            edge = GPIO.BOTH
+            edge = gpio.BOTH
 
-        return GPIO.wait_for_edge(self.pin, edge, timeout=timeout)
+        if edge is None:
+            raise ValueError(f'Invalid action chosen: {action}.')
+
+        return gpio.wait_for_edge(self.pin, edge, timeout=timeout)
 
     def cleanup(self):
         """Resets GPIO by pin"""
-        GPIO.cleanup(self.pin)
+        gpio.cleanup(self.pin)
 
     def __del__(self):
         self.cleanup()

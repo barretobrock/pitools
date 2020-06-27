@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from .gpio import GPIO
 import time
+from .gpio import GPIO
 
 
 class LED:

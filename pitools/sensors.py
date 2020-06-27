@@ -1,29 +1,50 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import time
-import pandas as pd
 import Adafruit_DHT as dht
 from typing import Union, Optional
 from .gpio import GPIO
 
 
-class TempSensor:
+class Sensor:
     """
-    Handle universal temperature sensor stuff
+    Universal sensor collection stuff
     """
 
-    def __init__(self, d: int = 2):
-        self.decimals = d
-        self.sensor_type = 'TEMP'
+    def __init__(self, sensor_model: str, decimals: int = 2, data_pin: int = None, serial: str = None):
+        """
+        :param sensor_model:
+        :param decimals:
+        :param data_pin:
+        :param serial:
+        """
+        self.decimals = decimals
+        # Determine the sensor to use
+        sensor_model = sensor_model.upper()
+        if sensor_model == 'DHT22':
+            # Need data pin
+            if data_pin is None:
+                raise ValueError('Data pin required for DHT22 sensor.')
+            self.sensor = DHTTempSensor(data_pin)
+        elif sensor_model == 'DALLAS':
+            # Need data pin
+            if serial is None:
+                raise ValueError('Serial required for DALLAS sensor.')
+            self.sensor = DallasTempSensor(serial)
+        elif sensor_model == 'CPU':
+            self.sensor = CPUTempSensor()
+        else:
+            raise ValueError(f'Invalid sensor model selected: {sensor_model}.')
 
-    def round_reads(self, data: Union[int, float, dict]) -> Union[int, float, dict]:
+    def round_reads(self, data: Union[int, float, dict]) -> Union[float, dict]:
         """
         Goes through data and rounds info to x decimal places
         Args:
             data: dict, temp/humidity data to round
                 keys - 'humidity', 'temp'
         """
-        def rounder(value):
+        def rounder(value: Union[int, float]) -> float:
             """Rounds the value"""
             if isinstance(value, int):
                 value = float(value)
@@ -39,49 +60,59 @@ class TempSensor:
             data = rounder(data)
         return data
 
+    def measure(self, n_times: int = 1, sleep_between_secs: int = 1) -> Optional[dict]:
+        """Takes a measurement of the sensor n times"""
+        measurements = {}
+        for i in range(0, n_times):
+            for k, v in self.sensor.take_reading().items():
+                if k in measurements.keys():
+                    measurements[k].append(v)
+                else:
+                    measurements[k] = [v]
+            time.sleep(sleep_between_secs)
 
-class DHTTempSensor(TempSensor):
+        # Take average of the measurements
+        for key, val in measurements.items():
+            if len(val) > 0:
+                # Calculate the average
+                measurements[key] = sum(val) / len(val)
+            else:
+                # Take out the measurement
+                _ = measurements.pop(key)
+
+        return self.round_reads(measurements)
+
+
+class DHTTempSensor:
     """
     DHT Temperature sensor
     """
-    def __init__(self, pin: int, decimals: int = 2):
+    def __init__(self, pin: int):
         """
         Args:
             pin: int, BCM pin number for data pin to DHT sensor
         """
-        TempSensor.__init__(self, d=decimals)
         self.sensor_model = 'DHT22'
         self.sensor = dht.DHT22
         self.pin = pin
 
-    def measure(self, n_times: int = 1, sleep_between_secs: int = 1):
-        """Take a measurement"""
+    @staticmethod
+    def _check_is_none(*args) -> bool:
+        """Checks if any items in the list are None"""
+        return any([x is None for x in args])
 
-        measurement = {
-            'humidity': [],
-            'temp': []
-        }
-        for i in range(0, n_times):
-            humidity, temp = dht.read_retry(self.sensor, self.pin)
-            if all([x is not None for x in [temp, humidity]]):
-                if humidity < 110:
-                    # Make sure the humidity measurement is within bounds
-                    measurement['humidity'].append(humidity)
-                measurement['temp'].append(temp)
-            time.sleep(sleep_between_secs)
-
-        # Take average of the measurements
-        for key, val in measurement.items():
-            if len(val) > 0:
-                # Calculate the average
-                measurement[key] = sum(val) / len(val)
-            else:
-                measurement[key] = None
-
-        return self.round_reads(measurement)
+    def take_reading(self) -> dict:
+        """Attempts to read in the sensor data"""
+        humidity, temp = dht.read_retry(self.sensor, self.pin)
+        if not self._check_is_none(humidity, temp):
+            return {
+                'temp': temp,
+                'humidity': humidity
+            }
+        return {}
 
 
-class DallasTempSensor(TempSensor):
+class DallasTempSensor:
     """
     Dallas-type temperature sensor
     """
@@ -91,11 +122,11 @@ class DallasTempSensor(TempSensor):
             serial: str, the serial number for the temperature sensor.
                 NOTE: found in /sys/bus/w1/devices/{}/w1_slave
         """
-        TempSensor.__init__(self)
         self.sensor_model = 'DALLAS'
         self.sensor_path = f'/sys/bus/w1/devices/{serial}/w1_slave'
 
-    def measure(self) -> Optional[dict]:
+    def take_reading(self) -> dict:
+        """Attempts to read in the sensor data"""
         with open(self.sensor_path) as f:
             result = f.read()
         result_list = result.split('\n')
@@ -106,119 +137,24 @@ class DallasTempSensor(TempSensor):
                 temp = float(r[r.index('t=') + 2:]) / 1000
                 break
         if temp is not None:
-            reading = {
-                'temp': self.round_reads(temp)
-            }
-            return reading
+            return {'temp': temp}
+        return {}
 
 
-class SensorLogger:
-    """Unified method of recording sensor details"""
+class CPUTempSensor:
+    """
+    CPU temperature sensor
+    """
 
-    def __init__(self, location: str, sensor: Union[DHTTempSensor, DallasTempSensor]):
-        """
-        Args:
-            location: str, the location name of the sensor as it appears in homeautodb
-            sensor: any *Sensor-type object
-        """
-        db_name = 'homeautodb'
-        self.location = location
-        self.sensor = sensor
-        self.qdict = {
-            'db_name': db_name,
-            'loc': location
-        }
-        self.loc_id, self.loc_openhab = self.lookup_location()
-        self.readings = self.collect_readings()
+    def __init__(self):
+        self.sensor_model = 'CPU'
 
-    def lookup_location(self):
-        """Given the name of the sensor, look up the location id"""
-        lookup_query = """
-        SELECT
-            loc.id
-            , loc.location
-            , loc.openhab_name
-        FROM
-            {db_name}.locations AS loc
-        WHERE
-            loc.location = '{loc}'
-        """.format(**self.qdict)
-
-        loc_df = self._read_query(lookup_query)
-        if not loc_df.empty:
-            loc_id = loc_df['id'].values[0]
-            loc_openhab = loc_df['openhab_name'].values[0]
-        else:
-            raise ValueError('Location "{loc}" was not found in the database.'.format(**self.qdict))
-        return loc_id, loc_openhab
-
-    def collect_readings(self):
-        """Take sensor measurements"""
-        now = pd.datetime.now()
-        reading_ts = now.strftime('%Y-%m-%d %H:%M:%S')
-        result_dict = {'timestamp': reading_ts}
-        if self.sensor.sensor_type == 'TEMP':
-            if self.sensor.sensor_model == 'DHT22':
-                # We'll be collecting temperature & humidity
-                avg_reading = self.sensor.measure(n_times=5)
-                temp_avg, hum_avg = (avg_reading[k] for k in ['temp', 'humidity'])
-                result_dict.update({
-                    'temp': temp_avg,
-                    'humidity': hum_avg
-                })
-            elif self.sensor.sensor_model == 'DALLAS':
-                # Collecting only temperature
-                result_dict.update(self.sensor.measure())
-        elif self.sensor.sensor_model == 'DARKSKY':
-            # Read in current readings
-            cur_df = self.sensor.sensor.current_summary()
-            # Build out a list of dataframes for each measurement to record
-            cur_df['loc_id'] = self.loc_id
-            cur_df['humidity'] = cur_df['humidity'] * 100
-            # Convert to dict, flatten results
-            result_dict.update({k: v[0] for k, v in cur_df.to_dict().items()})
-
-        return result_dict
-
-    def _update_mysql(self):
-        """Handles updating the MySQL db"""
-        values_list = None
-        if self.sensor.sensor_type == 'TEMP':
-            if self.sensor.sensor_model == 'DHT22':
-                # We'll be collecting temperature & humidity
-                tables = ['temps', 'humidity']
-                val_types = ['temp', 'humidity']
-            elif self.sensor.sensor_model == 'DALLAS':
-                # Just collecting temperature
-                tables = ['temps']
-                val_types = ['temp']
-            else:
-                raise ValueError('Unexpected temp sensor model: {}'.format(self.sensor.sensor_model))
-        elif self.sensor.sensor_model == 'DARKSKY':
-            tables = ['temps', 'humidity', 'ozone', 'wind', 'pressure']
-            val_types = ['temperature', 'humidity', 'ozone', 'windSpeed', 'pressure']
-
-        # build out a list of dictionary object of the values we're sending in
-        values_list = [
-            {
-                'loc_id': self.loc_id,
-                'record_date': self.readings['timestamp'],
-                'record_value': self.readings[x],
-                'tbl': y
-            } for x, y in zip(val_types, tables)
-        ]
-
-        if values_list is not None:
-            for vdict in values_list:
-                # Insert into tables
-                tbl = vdict.pop('tbl')
-                df = pd.DataFrame(vdict, index=[0])
-                self.db_eng.write_dataframe(tbl, df)
-
-    def _read_query(self, query):
-        """Gathers results for the given query"""
-        res = pd.read_sql_query(query, self.db_eng.connection)
-        return res
+    @staticmethod
+    def take_reading() -> dict:
+        """Attempts to read in the sensor data"""
+        temp_raw = os.popen('vcgencmd measure_temp').readline()
+        temp = float(temp_raw.replace('temp=', '').replace("'C", '').strip())
+        return {'temp': temp}
 
 
 class PIRSensor:
