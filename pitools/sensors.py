@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-from .gpio import GPIO
 import time
 import pandas as pd
-from importlib import import_module
-from .openhab import OpenHab
+import Adafruit_DHT as dht
+from typing import Union, Optional
+from .gpio import GPIO
 
 
 class TempSensor:
@@ -13,11 +12,11 @@ class TempSensor:
     Handle universal temperature sensor stuff
     """
 
-    def __init__(self, d=2):
+    def __init__(self, d: int = 2):
         self.decimals = d
         self.sensor_type = 'TEMP'
 
-    def round_reads(self, data):
+    def round_reads(self, data: Union[int, float, dict]) -> Union[int, float, dict]:
         """
         Goes through data and rounds info to x decimal places
         Args:
@@ -45,18 +44,17 @@ class DHTTempSensor(TempSensor):
     """
     DHT Temperature sensor
     """
-    def __init__(self, pin, decimals=2):
+    def __init__(self, pin: int, decimals: int = 2):
         """
         Args:
             pin: int, BCM pin number for data pin to DHT sensor
         """
         TempSensor.__init__(self, d=decimals)
         self.sensor_model = 'DHT22'
-        self.dht = import_module('Adafruit_DHT')
-        self.sensor = self.dht.DHT22
+        self.sensor = dht.DHT22
         self.pin = pin
 
-    def measure(self, n_times=1, sleep_between_secs=1):
+    def measure(self, n_times: int = 1, sleep_between_secs: int = 1):
         """Take a measurement"""
 
         measurement = {
@@ -64,7 +62,7 @@ class DHTTempSensor(TempSensor):
             'temp': []
         }
         for i in range(0, n_times):
-            humidity, temp = self.dht.read_retry(self.sensor, self.pin)
+            humidity, temp = dht.read_retry(self.sensor, self.pin)
             if all([x is not None for x in [temp, humidity]]):
                 if humidity < 110:
                     # Make sure the humidity measurement is within bounds
@@ -87,7 +85,7 @@ class DallasTempSensor(TempSensor):
     """
     Dallas-type temperature sensor
     """
-    def __init__(self, serial):
+    def __init__(self, serial: str):
         """
         Args:
             serial: str, the serial number for the temperature sensor.
@@ -95,36 +93,29 @@ class DallasTempSensor(TempSensor):
         """
         TempSensor.__init__(self)
         self.sensor_model = 'DALLAS'
-        self.sensor_path = '/sys/bus/w1/devices/{}/w1_slave'.format(serial)
+        self.sensor_path = f'/sys/bus/w1/devices/{serial}/w1_slave'
 
-    def measure(self):
+    def measure(self) -> Optional[dict]:
         with open(self.sensor_path) as f:
             result = f.read()
         result_list = result.split('\n')
+        temp = None
         for r in result_list:
             # Loop through line breaks and find temp line
             if 't=' in r:
                 temp = float(r[r.index('t=') + 2:]) / 1000
                 break
-        reading = {
-            'temp': self.round_reads(temp)
-        }
-        return reading
-
-
-class DarkSkyWeatherSensor:
-    """SensorWrapper for DarkSkyWeather"""
-
-    def __init__(self, sensor):
-        self.sensor = sensor
-        self.sensor_model = 'DARKSKY'
-        self.sensor_type = 'WEATHER'
+        if temp is not None:
+            reading = {
+                'temp': self.round_reads(temp)
+            }
+            return reading
 
 
 class SensorLogger:
     """Unified method of recording sensor details"""
 
-    def __init__(self, location, sensor):
+    def __init__(self, location: str, sensor: Union[DHTTempSensor, DallasTempSensor]):
         """
         Args:
             location: str, the location name of the sensor as it appears in homeautodb
@@ -133,7 +124,6 @@ class SensorLogger:
         db_name = 'homeautodb'
         self.location = location
         self.sensor = sensor
-        self.db_eng = MySQLLocal(db_name)
         self.qdict = {
             'db_name': db_name,
             'loc': location
@@ -190,17 +180,6 @@ class SensorLogger:
 
         return result_dict
 
-    def update(self, openhab=True, mysql=True):
-        """Updates mysql db and openhab with sensor details
-        """
-
-        if openhab:
-            # Update the OpenHab values
-            self._update_openhab()
-        if mysql:
-            # Update the MySQL tables
-            self._update_mysql()
-
     def _update_mysql(self):
         """Handles updating the MySQL db"""
         values_list = None
@@ -236,27 +215,6 @@ class SensorLogger:
                 df = pd.DataFrame(vdict, index=[0])
                 self.db_eng.write_dataframe(tbl, df)
 
-    def _update_openhab(self):
-        """Handles updating openhab info"""
-        oh = OpenHab()
-        oh_values = None
-
-        if self.sensor.sensor_type == 'TEMP':
-            if self.sensor.sensor_model == 'DHT22':
-                oh_values = {
-                    'Env_{}_Update'.format(self.loc_openhab): self.readings['timestamp'],
-                    'Temp_{}'.format(self.loc_openhab): self.readings['temp'],
-                    'Hum_{}'.format(self.loc_openhab): self.readings['humidity']
-                }
-            elif self.sensor.sensor_model == 'DALLAS':
-                oh_values = {
-                    'Temp_{}'.format(self.loc_openhab): self.readings['temp'],
-                }
-
-        if oh_values is not None:
-            for name, val in oh_values.items():
-                req = oh.update_value(name, '{}'.format(val))
-
     def _read_query(self, query):
         """Gathers results for the given query"""
         res = pd.read_sql_query(query, self.db_eng.connection)
@@ -267,7 +225,7 @@ class PIRSensor:
     """
     Functions for a PIR motion sensor
     """
-    def __init__(self, pin):
+    def __init__(self, pin: int):
         """
         Args:
             pin: int, the BCM pin related to the PIR sensor
@@ -275,7 +233,7 @@ class PIRSensor:
         self.sensor = GPIO(pin, mode='bcm', status='input')
         self.sensor_type = 'PIR'
 
-    def arm(self, sleep_sec=0.1, duration_sec=300):
+    def arm(self, sleep_sec: float = 0.1, duration_sec: int = 300) -> Optional[float]:
         """
         Primes the sensor for detecting motion.
             If motion detected, returns unix time
@@ -301,15 +259,15 @@ class PIRSensor:
 
 class DistanceSensor:
     """Functions for the HC-SR04 Ultrasonic range sensor"""
-    def __init__(self, trigger, echo):
+    def __init__(self, trigger_pin: int, echo_pin: int):
         self.sensor_type = 'ULTRASONIC'
         self.sensor_model = 'HC-SR04'
         # Set up the trigger
-        self.trigger = GPIO(trigger, status='output')
+        self.trigger = GPIO(trigger_pin, status='output')
         # Set up feedback
-        self.echo = GPIO(echo, status='input')
+        self.echo = GPIO(echo_pin, status='input')
 
-    def measure(self, wait_time=2, pulse_time=0.00001, round_decs=2):
+    def measure(self, wait_time: int = 2, pulse_time: float = 0.00001, round_decs: int = 2) -> float:
         """Take distance measurement in mm"""
         # Wait for sensor to settle
         self.trigger.set_output(0)
@@ -320,11 +278,15 @@ class DistanceSensor:
         self.trigger.set_output(0)
 
         # Get feedback
+        pulse_start = pulse_end = None
         while self.echo.get_input() == 0:
             pulse_start = time.time()
 
         while self.echo.get_input() == 1:
             pulse_end = time.time()
+
+        if not all([x is not None for x in [pulse_start, pulse_end]]):
+            raise ValueError('Pulse start/stops not detected.')
 
         pulse_duration = pulse_end - pulse_start
 

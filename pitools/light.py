@@ -6,7 +6,7 @@ import time
 
 class LED:
     """LED light functions"""
-    def __init__(self, pin):
+    def __init__(self, pin: int):
         """
         Args:
             pin: int, BCM pin to relay
@@ -21,7 +21,7 @@ class LED:
         """Turn LED OFF"""
         self.led_pin.set_output(0)
 
-    def blink(self, times, wait=0.1):
+    def blink(self, times: int, wait: int = 0.1):
         """Blinks LED x times, waiting y seconds between"""
         for x in range(0, times):
             self.turn_on()

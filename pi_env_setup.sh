@@ -33,14 +33,14 @@ echo -e "\nLC_ALL=en_US.UTF-8\nLANG=en_US.UTF-8\nLANGUAGE=en_US.UTF-8" | sudo te
 # Update packages
 sudo apt update && sudo apt upgrade
 # Install major python dependencies
-sudo apt install git git-core python3-pip python3-dev python3-pandas python3-mysqldb python3-rpi.gpio \
+sudo apt install git git-core python3-pip python3-dev python3-pandas python3-rpi.gpio \
     python3-serial wiringpi
 
 # Create directories
 mkdir data keys logs extras
 
 # Clone kavalkilu to home dir
-git clone https://github.com/barretobrock/kavalkilu.git
+git clone https://github.com/barretobrock/pitools.git ~/extras/pitools/
 
 # To run some of the scripts, bash is recommended over dash.
 #   To reconfigure `sh` to point to bash, run this
@@ -54,8 +54,5 @@ echo -e "LANGUAGE=en_US.UTF-8\nLC_ALL=en_US.UTF-8\nLC_TIME=en_US.UTF-8\nLANG=en_
 #echo "Beginning git credential storage"
 #git config --global credential.helper store
 #cd kavalkilu && git pull
-
-# Set environment variables
-#echo -e "\nexport KAVPY=/usr/bin/python3\nexport KAVDIR=${HOME}/kavalkilu" >> ~/.bashrc
 
 echo "Setup complete."

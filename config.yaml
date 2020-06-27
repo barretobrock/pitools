@@ -4,6 +4,7 @@ REPO:
   URL: https://github.com/barretobrock/${REPO_NAME}
   GIT_URL: git+${REPO_URL}.git#egg=${REPO_NAME}
   DIR: ${HOME}/extras/${REPO_NAME}
-  VENV: ${HOME}/venvs/ptools/bin/python
+  VENV: ${HOME}/venvs/pitools/bin/python
   DESC: A package for Raspberry Pi specific routines primarily focused around home automation
-  DEP1: git+https://github.com/barretobrock/kavalkilu.git#egg=kavalkilu
+  DEPS:
+    - git+https://github.com/barretobrock/kavalkilu.git#egg=kavalkilu

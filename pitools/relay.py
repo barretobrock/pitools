@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-from .gpio import GPIO
 import time
+from .gpio import GPIO
 
 
 class Relay:
     """Relay stuff"""
-    def __init__(self, pin, is_activelow=True):
+    def __init__(self, pin: int, is_activelow: bool = True):
         """
         Args:
             pin: int, BCM pin to relay
@@ -16,7 +15,7 @@ class Relay:
         self.is_activelow = is_activelow
         self.relay = GPIO(pin, mode='bcm', status='output', is_activelow=self.is_activelow)
 
-    def turn_on(self, back_off_sec=0):
+    def turn_on(self, back_off_sec: int = 0):
         """
         Turn relay to ON position
             NOTE: This is for the NC-type relay

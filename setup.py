@@ -33,10 +33,8 @@ setup_args = {
     'description': DESC,
     'url': URL,
     'author': 'Barret Obrock',
-    'packages': find_packages(exclude=['api', 'crons', 'documentation', 'scripts', 'tests']),
-    'dependency_links': [
-        'https://github.com/barretobrock/kavalkilu/tarball/master#egg=kavalkilu'
-    ],
+    'packages': find_packages(exclude=['api', 'crons', 'scripts', 'tests']),
+    'dependency_links': DEPS,
     'install_requires': reqs_list,
 }
 
