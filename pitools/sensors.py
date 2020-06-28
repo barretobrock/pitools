@@ -33,8 +33,14 @@ class Sensor:
             if serial is None:
                 raise ValueError('Serial required for DALLAS sensor.')
             self.sensor = DallasTempSensor(serial)
-        elif sensor_model == 'CPU':
+        elif sensor_model == 'CPUTEMP':
             self.sensor = CPUTempSensor()
+        elif sensor_model == 'CPU':
+            self.sensor = CPUSensor()
+        elif sensor_model == 'MEM':
+            self.sensor = MEMSensor()
+        elif sensor_model == 'DISK':
+            self.sensor = DiskSensor()
         else:
             raise ValueError(f'Invalid sensor model selected: {sensor_model}.')
 
@@ -83,7 +89,7 @@ class Sensor:
 
         return self.round_reads(measurements)
 
-    def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1):
+    def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1, tbl: str = InfluxTblNames.TEMPS):
         """Logs the measurements to Influx"""
         # Take measurements
         measurements = self.measure(n_times, sleep_between_secs)
@@ -96,7 +102,7 @@ class Sensor:
         }
         # Connect to db and load data
         influx = InfluxDBLocal(InfluxDBNames.HOMEAUTO)
-        influx.write_single_data(tbl=InfluxTblNames.TEMPS, tag_dict=tags, field_dict=measurements)
+        influx.write_single_data(tbl=tbl, tag_dict=tags, field_dict=measurements)
         # Close database
         influx.close()
 
