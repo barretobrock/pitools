@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Read temperature and humidity from living room"""
-from pitools import DHTTempSensor as DHT
+from pitools import Sensor
 from kavalkilu import Log
 
 
-log = Log('elutuba_temp', log_dir='weather')
-# Set the pin
-TEMP_PIN = 4
-sl = SensorLogger('living_room', DHT(TEMP_PIN, decimals=3))
-# Take in readings, update openhab & mysql data sources
-sl.update()
+logg = Log('elutuba_temp', log_dir='weather', log_to_db=True)
+# Set the pin (BCM)
+PIN = 4
+sensor = Sensor('DHT22', data_pin=PIN)
+# Take readings & log to db
+sensor.log_to_db()
 
-log.debug('Temp logging successfully completed.')
+logg.debug('Temp logging successfully completed.')
 
-log.close()
+logg.close()

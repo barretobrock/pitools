@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
 import time
+import psutil
 import Adafruit_DHT as dht
 from typing import Union, Optional
+from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames, NetTools
 from .gpio import GPIO
 
 
@@ -82,6 +83,23 @@ class Sensor:
 
         return self.round_reads(measurements)
 
+    def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1):
+        """Logs the measurements to Influx"""
+        # Take measurements
+        measurements = self.measure(n_times, sleep_between_secs)
+        if measurements is None:
+            raise ValueError('Unable to log data: measurement was NoneType.')
+        if len(measurements) == 0:
+            raise ValueError('Unable to log data: measurement dict was empty.')
+        tags = {
+            'location': NetTools().hostname
+        }
+        # Connect to db and load data
+        influx = InfluxDBLocal(InfluxDBNames.HOMEAUTO)
+        influx.write_single_data(tbl=InfluxTblNames.TEMPS, tag_dict=tags, field_dict=measurements)
+        # Close database
+        influx.close()
+
 
 class DHTTempSensor:
     """
@@ -148,13 +166,65 @@ class CPUTempSensor:
 
     def __init__(self):
         self.sensor_model = 'CPU'
+        self.cpu_temp = psutil.sensors_temperatures
 
-    @staticmethod
-    def take_reading() -> dict:
+    def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
-        temp_raw = os.popen('vcgencmd measure_temp').readline()
-        temp = float(temp_raw.replace('temp=', '').replace("'C", '').strip())
-        return {'temp': temp}
+        return {'cpu-temp': self.cpu_temp()['cpu-thermal'][0].current}
+
+
+class CPUSensor:
+    """
+    CPU use sensor
+    """
+
+    def __init__(self):
+        self.sensor_model = 'CPU'
+        self.cpu = psutil.cpu_percent
+
+    def take_reading(self) -> dict:
+        """Attempts to read in the sensor data"""
+        return {'cpu-use': self.cpu()}
+
+
+class MEMSensor:
+    """
+    Memory use sensor
+    """
+
+    def __init__(self):
+        self.sensor_model = 'MEM'
+        self.ram = psutil.virtual_memory()
+
+    def take_reading(self) -> dict:
+        """Attempts to read in the sensor data"""
+        # Collect memory usage data
+        mem_data = {
+            'ram-total': self.ram.total / 2 ** 20,
+            'ram-used': self.ram.used / 2 ** 20,
+            'ram-free': self.ram.free / 2 ** 20,
+            'ram-percent_used': self.ram.percent / 100
+        }
+
+        return mem_data
+
+
+class DiskSensor:
+    def __init__(self):
+        self.sensor_model = 'DISK'
+        self.disk = psutil.disk_usage('/')
+
+    def take_reading(self) -> dict:
+        """Attempts to read in the sensor data"""
+        # Collect disk usage data
+        disk_data = {
+            'disk-total': self.disk.total / 2 ** 30,
+            'disk-used': self.disk.used / 2 ** 30,
+            'disk-free': self.disk.free / 2 ** 30,
+            'disk-percent_used': self.disk.percent / 100
+        }
+
+        return disk_data
 
 
 class PIRSensor:
