@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import time
+import errno
+import subprocess
 import psutil
 import Adafruit_DHT as dht
 from typing import Union, Optional
@@ -13,14 +16,17 @@ class Sensor:
     Universal sensor collection stuff
     """
 
-    def __init__(self, sensor_model: str, decimals: int = 2, data_pin: int = None, serial: str = None):
+    def __init__(self, sensor_model: str, decimals: int = 2, data_pin: int = None,
+                 serial: str = None, loc_override: str = None):
         """
         :param sensor_model:
         :param decimals:
         :param data_pin:
         :param serial:
+        :param loc_override
         """
         self.decimals = decimals
+        self.loc_override = loc_override
         # Determine the sensor to use
         sensor_model = sensor_model.upper()
         if sensor_model == 'DHT22':
@@ -98,7 +104,7 @@ class Sensor:
         if len(measurements) == 0:
             raise ValueError('Unable to log data: measurement dict was empty.')
         tags = {
-            'location': NetTools().hostname
+            'location': NetTools().hostname if self.loc_override is None else self.loc_override
         }
         # Connect to db and load data
         influx = InfluxDBLocal(InfluxDBNames.HOMEAUTO)
@@ -149,8 +155,19 @@ class DallasTempSensor:
         self.sensor_model = 'DALLAS'
         self.sensor_path = f'/sys/bus/w1/devices/{serial}/w1_slave'
 
+    @staticmethod
+    def _prep_reading():
+        """Initializes the GPIO pins before collecting temperature info"""
+        try:
+            os.system('modprobe w1-gpio')   # Turn on GPIO
+            os.system('modprobe w1-therm')  # Turn on temperature module
+        except IOError as e:
+            if e[0] == errno.EPERM:
+                print('Sudo permissions required to run this script.')
+
     def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
+        self._prep_reading()
         with open(self.sensor_path) as f:
             result = f.read()
         result_list = result.split('\n')

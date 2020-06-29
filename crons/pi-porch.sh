@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # VARIABLES
-SENSORS=kavalkilu/sensors
+SENSORS=extras/pitools/scripts
 PY3=/home/pi/venvs/pitools/bin/python3
 
 # LOG ANALYSIS
@@ -9,5 +9,5 @@ PY3=/home/pi/venvs/pitools/bin/python3
 #32 3 20 * *     $PY3    $HOME/$SENSORS/log_remover.py -lvl debug
 ## SYS DATA COLLECTION
 #*/10 * * * *    $PY3    $HOME/$SENSORS/net/machine_uptime.py
-## ENV DATA COLLECTION
-#*/10 * * * *    $PY3    $HOME/$SENSORS/temps/porch_temps.py
+# ENV DATA COLLECTION
+*/10 * * * *    $PY3    $HOME/$SENSORS/sys/machine_data.py

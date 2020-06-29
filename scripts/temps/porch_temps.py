@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 """Read temperatures from several locations outside using Dallas sensors"""
 from time import sleep
-from kavalkilu import DallasTempSensor as Dallas, Log, LogArgParser, SensorLogger
+from kavalkilu import Log
+from pitools import Sensor
 
 
-log = Log('porch_temp', log_dir='temps', log_lvl=LogArgParser().loglvl)
+logg = Log('porch_temp', log_dir='weather', log_to_db=True)
 # Serial numbers of the Dallas temp sensors
 sensors = [
     {
@@ -19,13 +20,13 @@ sensors = [
         'loc': 'porch_lower_shade',
     }
 ]
-sl_list = [SensorLogger(x['loc'], Dallas(x['sn'])) for x in sensors]
 
-for slogger in sl_list:
-    # Update every sensor's details
-    slogger.update()
+for sensor_dict in sensors:
+    logg.debug(f'Collecting info for {sensor_dict["loc"]}')
+    sensor = Sensor('DALLAS', serial=sensor_dict['sn'], loc_override=sensor_dict['loc'])
+    sensor.log_to_db(2)
     sleep(1)
 
-log.debug('Temp logging successfully completed.')
+logg.debug('Temp logging successfully completed.')
 
-log.close()
+logg.close()
