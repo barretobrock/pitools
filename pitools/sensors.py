@@ -199,6 +199,12 @@ class CPUTempSensor:
         cpu_reading = self.cpu_temp().get('cpu-thermal')
         if cpu_reading is not None:
             return {'cpu-temp': cpu_reading[0].current}
+        else:
+            # CPU temp is likely being overridden by 1wire stuff
+            # Revert to vcgencmd
+            temp_raw = os.popen("vcgencmd measure_temp").readline()
+            temp = float(temp_raw.replace('temp=', '').replace('\'C', '').strip())
+            return {'cpu-temp': temp}
 
 
 class CPUSensor:
