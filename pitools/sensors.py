@@ -3,7 +3,6 @@
 import os
 import time
 import errno
-import subprocess
 import psutil
 import Adafruit_DHT as dht
 from typing import Union, Optional
@@ -193,7 +192,9 @@ class CPUTempSensor:
 
     def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
-        return {'cpu-temp': self.cpu_temp()['cpu-thermal'][0].current}
+        cpu_reading = self.cpu_temp().get('cpu-thermal')
+        if cpu_reading is not None:
+            return {'cpu-temp': cpu_reading[0].current}
 
 
 class CPUSensor:
