@@ -76,7 +76,10 @@ class Sensor:
         """Takes a measurement of the sensor n times"""
         measurements = {}
         for i in range(0, n_times):
-            for k, v in self.sensor.take_reading().items():
+            reading = self.sensor.take_reading()
+            if reading is None:
+                continue
+            for k, v in reading.items():
                 if k in measurements.keys():
                     measurements[k].append(v)
                 else:
@@ -91,8 +94,9 @@ class Sensor:
             else:
                 # Take out the measurement
                 _ = measurements.pop(key)
-
-        return self.round_reads(measurements)
+        if len(measurements) > 0:
+            return self.round_reads(measurements)
+        return None
 
     def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1, tbl: str = InfluxTblNames.TEMPS):
         """Logs the measurements to Influx"""
