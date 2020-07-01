@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # VARIABLES
-SENSORS=kavalkilu/sensors
+SENSORS=extras/pitools/scripts
 PY3=/home/pi/venvs/pitools/bin/python3
 
 # LOG ANALYSIS

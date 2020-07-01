@@ -6,7 +6,7 @@ from kavalkilu import Log
 
 
 logg = Log('garage_temp', log_dir='weather', log_to_db=True)
-sn = ''
+sn = '28-0000079ab34b'
 sensor = Sensor('DALLAS', serial=sn)
 # Take readings & log to db
 sensor.log_to_db()
