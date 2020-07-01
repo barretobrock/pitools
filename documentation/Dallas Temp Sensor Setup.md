@@ -18,7 +18,11 @@ G  D  V
  - reboot the pi
  - Verify that 1-Wire kernel modules have been loaded on the next boot
     `lsmod | grep -i w1_`
- - `sudo modprobe w1–gpio`
- - `sudo modprobe w1-therm`
- - `cd /sys/bus/w1/devices`
+ - `sudo modprobe w1_gpio`
+ - `sudo modprobe w1_therm`
+ - `ls /sys/bus/w1/devices`
+ 
+## Troubleshooting
+ - If you get an error about `w1-gpio` not being found, add this in /boot/config.txt:
+    `dtoverlay=w1-gpio,gpiopin=<your-data-pin-bcm>`
 

@@ -38,10 +38,13 @@ sudo apt update && sudo apt upgrade
 # NOTES:
 #   libatlas: to avoid a "numpy c-extensions failed" error
 sudo apt install git python3-pip python3-dev python3-pandas python3-rpi.gpio \
-    python3-serial wiringpi libatlas-base-dev python3-psutil
+    python3-serial wiringpi libatlas-base-dev python3-psutil python3-venv
 
 # Create directories
-mkdir data keys logs extras
+mkdir data keys logs extras venvs
+
+# Install virtual env
+cd ~/venvs/ && python3 -m venv pitools
 
 # Clone package manager to locla dir
 git clone https://github.com/barretobrock/py-package-manager.git ~/extras/py-package-manager/
