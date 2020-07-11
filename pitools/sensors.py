@@ -3,10 +3,9 @@
 import os
 import time
 import errno
-import psutil
 import Adafruit_DHT as dht
 from typing import Union, Optional
-from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames, NetTools
+from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames, NetTools, SysTools
 from .gpio import GPIO
 
 
@@ -192,19 +191,11 @@ class CPUTempSensor:
 
     def __init__(self):
         self.sensor_model = 'CPU'
-        self.cpu_temp = psutil.sensors_temperatures
+        self.tools = SysTools()
 
     def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
-        cpu_reading = self.cpu_temp().get('cpu-thermal')
-        if cpu_reading is not None:
-            return {'cpu-temp': cpu_reading[0].current}
-        else:
-            # CPU temp is likely being overridden by 1wire stuff
-            # Revert to vcgencmd
-            temp_raw = os.popen("vcgencmd measure_temp").readline()
-            temp = float(temp_raw.replace('temp=', '').replace('\'C', '').strip())
-            return {'cpu-temp': temp}
+        return self.tools.get_system_temps()
 
 
 class CPUSensor:
@@ -214,11 +205,11 @@ class CPUSensor:
 
     def __init__(self):
         self.sensor_model = 'CPU'
-        self.cpu = psutil.cpu_percent
+        self.tools = SysTools()
 
     def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
-        return {'cpu-use': self.cpu()}
+        return self.tools.get_cpu_percent()
 
 
 class MEMSensor:
@@ -228,37 +219,23 @@ class MEMSensor:
 
     def __init__(self):
         self.sensor_model = 'MEM'
-        self.ram = psutil.virtual_memory()
+        self.tools = SysTools()
 
     def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
-        # Collect memory usage data
-        mem_data = {
-            'ram-total': self.ram.total / 2 ** 20,
-            'ram-used': self.ram.used / 2 ** 20,
-            'ram-free': self.ram.free / 2 ** 20,
-            'ram-percent_used': self.ram.percent / 100
-        }
 
-        return mem_data
+        return self.tools.get_mem_data()
 
 
 class DiskSensor:
     def __init__(self):
         self.sensor_model = 'DISK'
-        self.disk = psutil.disk_usage('/')
+        self.tools = SysTools()
 
     def take_reading(self) -> dict:
         """Attempts to read in the sensor data"""
-        # Collect disk usage data
-        disk_data = {
-            'disk-total': self.disk.total / 2 ** 30,
-            'disk-used': self.disk.used / 2 ** 30,
-            'disk-free': self.disk.free / 2 ** 30,
-            'disk-percent_used': self.disk.percent / 100
-        }
 
-        return disk_data
+        return self.tools.get_disk_data()
 
 
 class PIRSensor:
