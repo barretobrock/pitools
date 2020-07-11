@@ -82,7 +82,7 @@ while not killer.kill_now:
         if data['id'] in mappings.keys():
             # Device is known... record data
             measurements = {}
-            for k, v in possible_measurements:
+            for k, v in possible_measurements.items():
                 if k in data.keys():
                     measurements[v] = data[k]
             if len(measurements) > 0:
