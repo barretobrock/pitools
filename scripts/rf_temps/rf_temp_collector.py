@@ -5,11 +5,14 @@ Reads in a piped stream of JSON data, tries to feed into InfluxDB directly
 import sys
 import json
 from json.decoder import JSONDecodeError
+from subprocess import Popen, PIPE, STDOUT
+from queue import Queue, Empty
 from datetime import datetime
 import pandas as pd
 from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames, Log, DateTools
 
 
+ON_POSIX = 'posix' in sys.builtin_module_names
 logg = Log('rf-collector', log_dir='weather', log_to_db=True)
 
 influx = InfluxDBLocal(InfluxDBNames.HOMEAUTO)
@@ -32,12 +35,23 @@ possible_measurements = {
 
 logg.debug('Initializing stream reader...')
 interval = datetime.now()
-split_s = 600   # Log every 10 mins
+split_s = 120   # Log every 10 mins
 data_df = pd.DataFrame()
+
+cmd = ['/usr/local/bin/rtl_433', '-F', 'json']
+p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=1, close_fds=ON_POSIX)
+q = Queue()
+pulse = 0
 while True:
-    line = sys.stdin.readline()
-    if not line:
-        break
+    line = None
+    try:
+        src, line = q.get(timeout=1)
+    except Empty:
+        pulse += 1
+    else:
+        # Got line
+        pulse -= 0
+    print(line)
     data = None
     try:
         data = json.loads(line)

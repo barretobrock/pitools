@@ -1,0 +1,14 @@
+
+[Unit]
+Description=RTL 433 Data Collection Service
+After=multi-user.target
+
+[Service]
+User=pi
+Group=pi
+Type=idle
+ExecStart=/home/pi/venvs/pitools/bin/python3 /home/pi/extras/pitools/scripts/rf_temps/rf_collect.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

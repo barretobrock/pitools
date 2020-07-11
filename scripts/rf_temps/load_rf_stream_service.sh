@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # LOADS SERVICE INTO SYSTEMD
 
-SERVICEFILE=rf_temp_collection.service
+SERVICEFILE=rf_stream.service
 SRC_FPATH=~/extras/pitools/scripts/rf_temps/${SERVICEFILE}
 LIB_FPATH=/lib/systemd/system/${SERVICEFILE}
 
