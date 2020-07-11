@@ -7,7 +7,7 @@ After=multi-user.target
 User=pi
 Group=pi
 Type=idle
-ExecStart=/usr/local/bin/rtl_433 -F syslog:1433
+ExecStart=/usr/local/bin/rtl_433 -F syslog:192.168.1.11:1433
 Restart=on-failure
 
 [Install]
