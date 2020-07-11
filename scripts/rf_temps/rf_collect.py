@@ -8,9 +8,10 @@ import socket
 from datetime import datetime
 import json
 import sys
-from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames
+from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames, Log
 
 
+logg = Log('rf_temp')
 UDP_IP = "127.0.0.1"
 UDP_PORT = 1433
 
@@ -25,6 +26,7 @@ FIELDS = [
     "battery_ok"
 ]
 
+logg.debug('Establishing socket...')
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.bind((UDP_IP, UDP_PORT))
 
@@ -48,11 +50,11 @@ def rtl_433_probe():
 
     while True:
         line, _addr = sock.recvfrom(1024)
-
+        logg.debug(f'Rcv: line: {line}')
         try:
             line = parse_syslog(line)
             data = json.loads(line)
-            print(f'Seeing: {data}')
+            logg.debug(f'Seeing: {data}')
 
             if "model" not in data:
                 continue
@@ -79,15 +81,12 @@ def rtl_433_probe():
             }
 
             try:
-
                 influx.write_single_data(InfluxTblNames.TEMPS, tags, fields)
             except Exception as e:
                 print("error {} writing {}".format(e, point), file=sys.stderr)
 
-        except KeyError:
-            pass
-
-        except ValueError:
+        except (KeyError, ValueError) as e:
+            logg.debug(f'Error occurred: {e}')
             pass
 
 
@@ -101,4 +100,5 @@ def run():
 
 
 if __name__ == "__main__":
+    logg.debug('Running probe...')
     run()
