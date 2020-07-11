@@ -54,7 +54,7 @@ killer = GracefulKiller()
 
 # Set up methods to periodically send processed data packets to Influx
 interval = datetime.now()
-split_s = 60   # Log every 10 mins
+split_s = 600   # Data packet to influx interval
 logg.debug(f'Data packets sent to Influx every {split_s / 60} mins.')
 data_df = pd.DataFrame()
 
@@ -66,7 +66,7 @@ while not killer.kill_now:
     data = None
     try:
         data = json.loads(line)
-        logg.debug(f'Seeing: {data}')
+        # logg.debug(f'Seeing: {data}')
     except JSONDecodeError as e:
         logg.error_with_class(e, 'Unable to parse this object. Skipping.')
         continue
