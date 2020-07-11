@@ -54,14 +54,13 @@ killer = GracefulKiller()
 
 # Set up methods to periodically send processed data packets to Influx
 interval = datetime.now()
-split_s = 120   # Log every 10 mins
+split_s = 60   # Log every 10 mins
 logg.debug(f'Data packets sent to Influx every {split_s / 60} mins.')
 data_df = pd.DataFrame()
 
 logg.debug('Beginning loop!')
 while not killer.kill_now:
     line, _addr = sock.recvfrom(1024)
-    logg.debug(f'Rcv: line: {line}')
     # Convert line from bytes to str, prep for conversion into dict
     line = parse_syslog(line)
     data = None
@@ -99,6 +98,10 @@ while not killer.kill_now:
     if (datetime.now() - interval).total_seconds() > split_s:
         # Gone over the time limit. Try to log all the non-duplicate info to database
         data_df = data_df.drop_duplicates()
+        # Enforce data types
+        for col in ['temp', 'humidity']:
+            if col in data_df.columns:
+                data_df[col] = data_df[col].astype(float)
         logg.debug(f'Logging interval reached. Sending over {data_df.shape[0]} points to db.')
         influx.write_df_to_table(InfluxTblNames.TEMPS, data_df, tags='location',
                                  value_cols=['temp', 'humidity'], time_col='timestamp')
