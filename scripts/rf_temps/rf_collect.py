@@ -22,8 +22,11 @@ mappings = {
     9459: {
         'name': 'freezer'
     },
+    6853: {
+        'name': 'kontor-wc'
+    },
     210: {
-        'name': 'unknown'
+        'name': 'neighbor-porch'
     }
 }
 
