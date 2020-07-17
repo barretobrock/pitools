@@ -27,6 +27,18 @@ mappings = {
     },
     210: {
         'name': 'neighbor-porch'
+    },
+    14539: {
+        'name': 'fridge'
+    },
+    5252: {
+        'name': 'elutuba'
+    },
+    12476: {
+        'suur-wc'
+    },
+    8416: {
+        'alumine-r6du'
     }
 }
 
