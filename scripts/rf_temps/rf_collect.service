@@ -7,7 +7,7 @@ After=multi-user.target
 User=pi
 Group=pi
 Type=idle
-ExecStart=/home/pi/venvs/pitools/bin/python3 /home/pi/extras/pitools/scripts/rf_temps/rf_collect.py
+ExecStart=/home/pi/venvs/pitools/bin/python3 /home/pi/extras/pitools/scripts/rf_temps/rf_collect.py -lvl info
 Restart=on-failure
 
 [Install]

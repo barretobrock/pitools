@@ -35,10 +35,10 @@ mappings = {
         'name': 'elutuba'
     },
     12476: {
-        'suur-wc'
+        'name': 'suur-wc'
     },
     8416: {
-        'alumine-r6du'
+        'name': 'alumine-r6du'
     }
 }
 
