@@ -1,0 +1,18 @@
+//Put this in /etc/nginx/sites-available/home.local
+server {
+        listen 80;
+
+        root /var/www/home.local/html;
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name home.local;
+
+        location / {
+                proxy_set_header Host $host;
+                proxy_pass http://127.0.0.1:5000;
+                proxy_redirect off;
+        }
+}
+
+# Enable with
+sudo ln -s /etc/nginx/sites-available/home.local /etc/nginx/sites-enabled/
