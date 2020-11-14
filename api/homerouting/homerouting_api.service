@@ -1,0 +1,14 @@
+
+[Unit]
+Description=Home Routing API
+After=multi-user.target
+
+[Service]
+User=bobrock
+Group=bobrock
+Type=idle
+ExecStart=/home/bobrock/venvs/pitools/bin/python3 /home/bobrock/extras/pitools/api/homerouting/homerouting_api.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
