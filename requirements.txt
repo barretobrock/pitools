@@ -1,5 +1,8 @@
 Adafruit_Python_DHT==1.4.0 ; platform_machine=="arm" or platform_machine=="armv6l"
+easylogger
+Flask==1.1.2
 gpiozero==1.5.1 ; platform_machine=="arm" or platform_machine=="armv6l"
-pandas==1.0.3
+kavalkilu
+pandas==1.1.5
 picamera==1.13 ; platform_machine=="arm" or platform_machine=="armv6l"
 RPi.GPIO==0.7.0 ; platform_machine=="arm" or platform_machine=="armv6l"
