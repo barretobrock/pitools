@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import time
-from kavalkilu.tools.relay import Relay
+from pitools import Relay
 
 # Pin to relay 1 (take BCM pin from 'gpio readall' command)
 PIN = 25

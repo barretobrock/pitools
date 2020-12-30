@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Read temperature and humidity from living room"""
+from kavalkilu import LogWithInflux
 from pitools import Sensor
-from kavalkilu import Log
+from pitools.peripherals import PiGarage
 
 
-logg = Log('garage_temp', log_dir='weather', log_to_db=True)
-sn = '28-0000079ab34b'
-sensor = Sensor('DALLAS', serial=sn)
+logg = LogWithInflux('garage_temp', log_dir='weather')
+
+sensor = Sensor('DALLAS', serial=PiGarage.dallas.sn)
 # Take readings & log to db
 sensor.log_to_db()
 

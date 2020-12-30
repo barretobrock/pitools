@@ -5,7 +5,7 @@ import time
 import errno
 import Adafruit_DHT as dht
 from typing import Union, Optional
-from kavalkilu import InfluxDBLocal, InfluxDBNames, InfluxTblNames, NetTools, SysTools
+from kavalkilu import InfluxDBLocal, InfluxDBHomeAuto,  NetTools, SysTools
 from .gpio import GPIO
 
 
@@ -97,7 +97,7 @@ class Sensor:
             return self.round_reads(measurements)
         return None
 
-    def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1, tbl: str = InfluxTblNames.TEMPS):
+    def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1):
         """Logs the measurements to Influx"""
         # Take measurements
         measurements = self.measure(n_times, sleep_between_secs)
@@ -109,8 +109,8 @@ class Sensor:
             'location': NetTools().hostname if self.loc_override is None else self.loc_override
         }
         # Connect to db and load data
-        influx = InfluxDBLocal(InfluxDBNames.HOMEAUTO)
-        influx.write_single_data(tbl=tbl, tag_dict=tags, field_dict=measurements)
+        influx = InfluxDBLocal(InfluxDBHomeAuto.TEMPS)
+        influx.write_single_data(tag_dict=tags, field_dict=measurements)
         # Close database
         influx.close()
 
