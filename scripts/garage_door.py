@@ -29,12 +29,12 @@ last_status = ha.get_state(PiGarage.ha_garage_door_sensor).get('state')
 
 # Typically, reading is ca. 259cm when door is closed. ca. 50cm when open
 if avg < 6000:
-    status = 'OPEN'
+    status = 'open'
     # TODO: Depth when car is in
 else:
-    status = 'CLOSED'
-logg.debug(f'Door is {status.lower()}. Reading of {avg}')
-
-ha.set_state(PiGarage.ha_garage_door_sensor, {'state': status.lower()})
+    status = 'closed'
+logg.debug(f'Door is {status}. Reading of {avg}')
+if last_status != status:
+    ha.set_state(PiGarage.ha_garage_door_sensor, {'state': status})
 
 logg.close()

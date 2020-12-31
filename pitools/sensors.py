@@ -5,7 +5,8 @@ import time
 import errno
 import Adafruit_DHT as dht
 from typing import Union, Optional
-from kavalkilu import InfluxDBLocal, InfluxDBHomeAuto,  NetTools, SysTools
+from kavalkilu import InfluxDBLocal, InfluxDBHomeAuto,  NetTools, SysTools, HAHelper
+from kavalkilu.influx import InfluxTable
 from .gpio import GPIO
 
 
@@ -97,7 +98,8 @@ class Sensor:
             return self.round_reads(measurements)
         return None
 
-    def log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1):
+    def measure_and_log_to_db(self, n_times: int = 5, sleep_between_secs: int = 1,
+                  tbl: InfluxTable = InfluxDBHomeAuto.TEMPS, send_to_ha: bool = False):
         """Logs the measurements to Influx"""
         # Take measurements
         measurements = self.measure(n_times, sleep_between_secs)
@@ -105,14 +107,24 @@ class Sensor:
             raise ValueError('Unable to log data: measurement was NoneType.')
         if len(measurements) == 0:
             raise ValueError('Unable to log data: measurement dict was empty.')
+        # Determine device name
+        dev_name = NetTools().hostname if self.loc_override is None else self.loc_override
         tags = {
-            'location': NetTools().hostname if self.loc_override is None else self.loc_override
+            'location': dev_name
         }
         # Connect to db and load data
-        influx = InfluxDBLocal(InfluxDBHomeAuto.TEMPS)
+        influx = InfluxDBLocal(tbl)
         influx.write_single_data(tag_dict=tags, field_dict=measurements)
         # Close database
         influx.close()
+        if send_to_ha:
+            # Send to HA
+            ha = HAHelper()
+            allow_keys = ['temp']
+            for k, v in measurements.keys():
+                if k in allow_keys:
+                    sensor_name = f'sensor.{dev_name.replace("-", "_")}_{k}'
+                    ha.set_state(sensor_name, {'state': v})
 
 
 class DHTTempSensor:
