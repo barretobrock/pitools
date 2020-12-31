@@ -9,4 +9,4 @@ PY3=/home/pi/venvs/pitools/bin/python3
 #32 3 20 * *     $PY3    $HOME/$SENSORS/log_remover.py -lvl debug
 ## ENV DATA COLLECTION
 */10 * * * *    $PY3    $HOME/$SENSORS/sys/machine_data.py -lvl debug
-*/5 * * * *     $PY3    $HOME/$SENSORS/garage_door.py -lvl debug
+#*/5 * * * *     $PY3    $HOME/$SENSORS/garage_door.py -lvl debug

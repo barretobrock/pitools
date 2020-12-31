@@ -121,7 +121,7 @@ class Sensor:
             # Send to HA
             ha = HAHelper()
             allow_keys = ['temp']
-            for k, v in measurements.keys():
+            for k, v in measurements.items():
                 if k in allow_keys:
                     sensor_name = f'sensor.{dev_name.replace("-", "_")}_{k}'
                     ha.set_state(sensor_name, {'state': v})
