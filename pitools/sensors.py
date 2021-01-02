@@ -124,7 +124,7 @@ class Sensor:
             for k, v in measurements.items():
                 if k in allow_keys:
                     sensor_name = f'sensor.{dev_name.replace("-", "_")}_{k}'
-                    ha.set_state(sensor_name, {'state': v})
+                    ha.set_state(sensor_name, {'state': v}, data_class=k)
 
 
 class DHTTempSensor:
